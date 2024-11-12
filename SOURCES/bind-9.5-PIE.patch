@@ -1,0 +1,17 @@
+diff --git a/bin/named/Makefile.am b/bin/named/Makefile.am
+index 57a023b..085f2f7 100644
+--- a/bin/named/Makefile.am
++++ b/bin/named/Makefile.am
+@@ -32,9 +32,12 @@ AM_CPPFLAGS +=				\
+ endif HAVE_LIBXML2
+ 
+ AM_CPPFLAGS +=						\
++	-fpie                                           \
+ 	-DNAMED_LOCALSTATEDIR=\"${localstatedir}\"	\
+ 	-DNAMED_SYSCONFDIR=\"${sysconfdir}\"
+ 
++AM_LDFLAGS += -pie -Wl,-z,relro,-z,now,-z,nodlopen,-z,noexecstack
++
+ sbin_PROGRAMS = named
+ 
+ nodist_named_SOURCES = xsl.c
