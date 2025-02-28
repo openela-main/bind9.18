@@ -77,7 +77,7 @@ License:  MPL-2.0 AND ISC AND MIT AND BSD-3-Clause AND BSD-2-Clause
 # ./lib/isc/tm.c BSD-2-clause and/or MPL-2.0
 # ./lib/isccfg/parser.c BSD-2-clause and/or MPL-2.0
 Version:  9.18.29
-Release:  1%{?dist}
+Release:  1%{?dist}.1
 Epoch:    32
 Url:      https://www.isc.org/downloads/bind/
 #
@@ -114,6 +114,11 @@ Patch10: bind-9.5-PIE.patch
 Patch16: bind-9.16-redhat_doc.patch
 # https://bugzilla.redhat.com/show_bug.cgi?id=2122010
 Patch26: bind-9.18-unittest-netmgr-unstable.patch
+# https://gitlab.isc.org/isc-projects/bind9/-/commit/c6e6a7af8ac6b575dd3657b0f5cf4248d734c2b0
+Patch27: bind-9.18-CVE-2024-11187-pre-test.patch
+Patch28: bind-9.18-CVE-2024-11187.patch
+# https://gitlab.isc.org/isc-projects/bind9/-/commit/e733e624147155d6cbee7f0f150c79c7ac6b54bb
+Patch29: bind-9.18-CVE-2024-12705.patch
 
 %{?systemd_ordering}
 Requires:       coreutils
@@ -961,6 +966,10 @@ fi;
 %endif
 
 %changelog
+* Mon Feb 03 2025 Petr Menšík <pemensik@redhat.com> - 32:9.18.29-1.1
+- Limit additional section records CPU processing (CVE-2024-11187)
+- Read HTTPS requests in limited chunks and prevent overload (CVE-2024-12705)
+
 * Wed Aug 21 2024 Petr Menšík <pemensik@redhat.com> - 32:9.18.29-1
 - Update to 9.18.29 (RHEL-53015)
 
