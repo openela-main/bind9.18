@@ -1,0 +1,44 @@
+From ac0c3b0477d97fe5c968910f603bb8d04c740da7 Mon Sep 17 00:00:00 2001
+From: Petr Mensik <pemensik@redhat.com>
+Date: Tue, 3 Jun 2025 21:00:58 +0200
+Subject: [PATCH] Handle CNAME and DNAME in resume_min in a special way
+
+When authoritative zone is loaded when query minimization query for the
+same zone is already pending, it might receive unexpected result codes.
+
+Normally DNS_R_CNAME would follow to query_cname after processing sent
+events, but dns_view_findzonecut does not fill CNAME target into
+event->foundevent. Usual lookup via query_lookup would always have that
+filled.
+
+Ideally we would restart the query with unmodified search name, if
+unexpected change from recursing to local zone cut were detected. Until
+dns_view_findzonecut is modified to export zone/cache source of the cut,
+at least fail queries which went into unexpected state.
+---
+ lib/dns/resolver.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/lib/dns/resolver.c b/lib/dns/resolver.c
+index 795791246b..39a294437e 100644
+--- a/lib/dns/resolver.c
++++ b/lib/dns/resolver.c
+@@ -4497,6 +4497,15 @@ resume_qmin(isc_task_t *task, isc_event_t *event) {
+ 	if (result == DNS_R_NXDOMAIN) {
+ 		result = DNS_R_SERVFAIL;
+ 	}
++	/*
++	 * CNAME or DNAME means zone were added with that record
++	 * after the start of query minimization queries. It means
++	 * we do not have initialized correct hevent->foundname
++	 * and have to fail.
++	 */
++	if (result == DNS_R_CNAME || result == DNS_R_DNAME) {
++		result = DNS_R_SERVFAIL;
++	}
+ 
+ 	if (result != ISC_R_SUCCESS) {
+ 		goto cleanup;
+-- 
+2.49.0
+

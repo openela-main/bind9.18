@@ -1,0 +1,90 @@
+From 5bc7cd7a7b9c37e5c70ccf74c5485a02411aaef5 Mon Sep 17 00:00:00 2001
+From: Petr Mensik <pemensik@redhat.com>
+Date: Fri, 25 Apr 2025 02:00:00 +0200
+Subject: [PATCH] Insert additional checks ensuring name is not relative
+
+Mitigation for crashes put in various places, where obviously relative
+uninitialized name must not appear. This seems unnecessary once true
+cause were identified, but may prevent similar places.
+---
+ lib/ns/query.c | 35 +++++++++++++++++++++++++++++++++++
+ 1 file changed, 35 insertions(+)
+
+diff --git a/lib/ns/query.c b/lib/ns/query.c
+index 11d2520..7e8a4d2 100644
+--- a/lib/ns/query.c
++++ b/lib/ns/query.c
+@@ -2203,6 +2203,20 @@ regular:
+ 	CTRACE(ISC_LOG_DEBUG(3), "query_additional: done");
+ }
+ 
++static void
++log_query_relative(query_ctx_t *qctx, const char *func, const dns_name_t *name) {
++	if (isc_log_wouldlog(ns_lctx, ISC_LOG_DEBUG(1))) {
++		char namebuf[DNS_NAME_FORMATSIZE] = "!";
++		dns_name_format(name, namebuf, sizeof(namebuf));
++		ns_client_log(
++			qctx->client, NS_LOGCATEGORY_CLIENT, NS_LOGMODULE_QUERY,
++			ISC_LOG_DEBUG(1),
++			"%s: fname=%s leading to relative name, aborting query.",
++			func, namebuf
++		);
++	}
++}
++
+ static void
+ query_addrrset(query_ctx_t *qctx, dns_name_t **namep,
+ 	       dns_rdataset_t **rdatasetp, dns_rdataset_t **sigrdatasetp,
+@@ -2275,6 +2289,11 @@ query_addrrset(query_ctx_t *qctx, dns_name_t **namep,
+ 		client->query.attributes &= ~NS_QUERYATTR_SECURE;
+ 	}
+ 
++	if (!qctx->is_zone && mname && !dns_name_isabsolute(mname)) {
++		log_query_relative(qctx, "query_addrrset", mname);
++		QUERY_ERROR(qctx, DNS_R_SERVFAIL);
++		return;
++	}
+ 	/*
+ 	 * Update message name, set rdataset order, and do additional
+ 	 * section processing if needed.
+@@ -8074,6 +8093,11 @@ query_respond_any(query_ctx_t *qctx) {
+ 							     : qctx->tname;
+ 				query_prefetch(qctx->client, name,
+ 					       qctx->rdataset);
++				if (name && !dns_name_isabsolute(name)) {
++					log_query_relative(qctx, "query_respond_any", name);
++					result = DNS_R_DROP;
++					break;
++				}
+ 			}
+ 
+ 			/*
+@@ -10696,6 +10720,11 @@ query_cname(query_ctx_t *qctx) {
+ 
+ 	if (!qctx->is_zone && RECURSIONOK(qctx->client)) {
+ 		query_prefetch(qctx->client, qctx->fname, qctx->rdataset);
++		if (qctx->fname && !dns_name_isabsolute(qctx->fname)) {
++			log_query_relative(qctx, "query_cname", qctx->fname);
++			QUERY_ERROR(qctx, DNS_R_SERVFAIL);
++			return (ns_query_done(qctx));
++		}
+ 	}
+ 
+ 	query_addrrset(qctx, &qctx->fname, &qctx->rdataset, sigrdatasetp,
+@@ -10801,7 +10830,13 @@ query_dname(query_ctx_t *qctx) {
+ 
+ 	if (!qctx->is_zone && RECURSIONOK(qctx->client)) {
+ 		query_prefetch(qctx->client, qctx->fname, qctx->rdataset);
++		if (qctx->fname && !dns_name_isabsolute(qctx->fname)) {
++			log_query_relative(qctx, "query_dname", qctx->fname);
++			QUERY_ERROR(qctx, DNS_R_SERVFAIL);
++			return (ns_query_done(qctx));
++		}
+ 	}
++
+ 	query_addrrset(qctx, &qctx->fname, &qctx->rdataset, sigrdatasetp,
+ 		       qctx->dbuf, DNS_SECTION_ANSWER);
+ 
+-- 
+2.49.0
+

@@ -77,7 +77,7 @@ License:  MPL-2.0 AND ISC AND MIT AND BSD-3-Clause AND BSD-2-Clause
 # ./lib/isc/tm.c BSD-2-clause and/or MPL-2.0
 # ./lib/isccfg/parser.c BSD-2-clause and/or MPL-2.0
 Version:  9.18.29
-Release:  3%{?dist}
+Release:  4%{?dist}
 Epoch:    32
 Url:      https://www.isc.org/downloads/bind/
 #
@@ -124,6 +124,12 @@ Patch30: bind-9.18-CVE-2024-11187-pre-test.patch
 Patch31: bind-9.18-CVE-2024-11187.patch
 # https://gitlab.isc.org/isc-projects/bind9/-/commit/e733e624147155d6cbee7f0f150c79c7ac6b54bb
 Patch32: bind-9.18-CVE-2024-12705.patch
+# https://gitlab.isc.org/isc-projects/bind9/-/merge_requests/10562
+# https://gitlab.isc.org/isc-projects/bind9/-/issues/5357
+# downstream patch fixing bind-dyndb-ldap causing issue
+Patch33: bind-9.21-resume-qmin-cname.patch
+# downstream only, extra check for above change, RHEL-30407
+Patch34: bind-9.18-query-fname-relative.patch
 
 %{?systemd_ordering}
 Requires:       coreutils
@@ -971,6 +977,10 @@ fi;
 %endif
 
 %changelog
+* Tue Jun 10 2025 Petr Mensik <pemensik@redhat.com> - 32:9.18.29-4
+- Prevent name.c:670 attributes assertion failed (RHEL-30407)
+- Add extra checks for relative names
+
 * Mon Feb 03 2025 Petr Menšík <pemensik@redhat.com> - 32:9.18.29-3
 - Limit additional section records CPU processing (CVE-2024-11187)
 - Read HTTPS requests in limited chunks and prevent overload (CVE-2024-12705)
