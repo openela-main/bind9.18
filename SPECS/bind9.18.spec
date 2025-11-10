@@ -77,7 +77,7 @@ License:  MPL-2.0 AND ISC AND MIT AND BSD-3-Clause AND BSD-2-Clause
 # ./lib/isc/tm.c BSD-2-clause and/or MPL-2.0
 # ./lib/isccfg/parser.c BSD-2-clause and/or MPL-2.0
 Version:  9.18.29
-Release:  4%{?dist}
+Release:  4%{?dist}.2
 Epoch:    32
 Url:      https://www.isc.org/downloads/bind/
 #
@@ -130,6 +130,19 @@ Patch32: bind-9.18-CVE-2024-12705.patch
 Patch33: bind-9.21-resume-qmin-cname.patch
 # downstream only, extra check for above change, RHEL-30407
 Patch34: bind-9.18-query-fname-relative.patch
+# https://gitlab.isc.org/isc-projects/bind9/commit/40c396ba2d955c32d70db04e900e40bf96519c59
+# https://gitlab.isc.org/isc-projects/bind9/commit/7c5b8ef055900224f0424c341927562c5a9ebe19
+Patch223: bind-9.18-CVE-2025-8677.patch
+# https://gitlab.isc.org/isc-projects/bind9/commit/025d61bacd0f57f994a631654aff7a933d89a547
+# https://gitlab.isc.org/isc-projects/bind9/commit/cd17dfe696cdf9b8ef23fbc8738de7c79f957846
+# https://gitlab.isc.org/isc-projects/bind9/commit/4c6d03b0bb2ffbafcde8e8a5bc0e49908b978a72
+Patch224: bind-9.18-CVE-2025-40778.patch
+# https://gitlab.isc.org/isc-projects/bind9/commit/8330b49fb90bfeae14b47b7983e9459cc2bbaffe
+Patch225: bind-9.18-CVE-2025-40780.patch
+# https://gitlab.isc.org/isc-projects/bind9/-/merge_requests/11194
+Patch226: bind-9.20-CVE-2025-8677-dual-signing.patch
+# https://gitlab.isc.org/isc-projects/bind9/-/merge_requests/11195
+Patch227: bind-9.20-CVE-2025-8677-dual-signing-test.patch
 
 %{?systemd_ordering}
 Requires:       coreutils
@@ -977,6 +990,15 @@ fi;
 %endif
 
 %changelog
+* Fri Oct 31 2025 Petr Menšík <pemensik@redhat.com> - 32:9.18.29-4.2
+- Fix upstream reported regression in recent CVE fix (CVE-2025-8677)
+- Add upstream created test to this regression
+
+* Thu Oct 23 2025 Petr Menšík <pemensik@redhat.com> - 32:9.18.29-4.1
+- Refuse malformed DNSKEY records (CVE-2025-8677)
+- Address various spoofing attacks (CVE-2025-40778)
+- Prevent cache poisoning due to weak PRNG (CVE-2025-40780)
+
 * Tue Jun 10 2025 Petr Mensik <pemensik@redhat.com> - 32:9.18.29-4
 - Prevent name.c:670 attributes assertion failed (RHEL-30407)
 - Add extra checks for relative names
