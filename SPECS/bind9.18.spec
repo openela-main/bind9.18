@@ -77,7 +77,7 @@ License:  MPL-2.0 AND ISC AND MIT AND BSD-3-Clause AND BSD-2-Clause
 # ./lib/isc/tm.c BSD-2-clause and/or MPL-2.0
 # ./lib/isccfg/parser.c BSD-2-clause and/or MPL-2.0
 Version:  9.18.29
-Release:  4%{?dist}.2
+Release:  5%{?dist}.2
 Epoch:    32
 Url:      https://www.isc.org/downloads/bind/
 #
@@ -505,6 +505,7 @@ export TSAN_OPTIONS="log_exe_name=true log_path=ThreadSanitizer exitcode=0"
     THREADS=16
     ulimit -n 8092 || : # Requires on some machines with many cores
   fi
+  export ISC_TASK_WORKERS="$THREADS"
   e=0
   make unit -j${THREADS} || e=$?
   # Display details of failure
@@ -990,14 +991,17 @@ fi;
 %endif
 
 %changelog
-* Fri Oct 31 2025 Petr Menšík <pemensik@redhat.com> - 32:9.18.29-4.2
+* Fri Oct 31 2025 Petr Menšík <pemensik@redhat.com> - 32:9.18.29-5.2
 - Fix upstream reported regression in recent CVE fix (CVE-2025-8677)
 - Add upstream created test to this regression
 
-* Thu Oct 23 2025 Petr Menšík <pemensik@redhat.com> - 32:9.18.29-4.1
+* Thu Oct 23 2025 Petr Menšík <pemensik@redhat.com> - 32:9.18.29-5.1
 - Refuse malformed DNSKEY records (CVE-2025-8677)
 - Address various spoofing attacks (CVE-2025-40778)
 - Prevent cache poisoning due to weak PRNG (CVE-2025-40780)
+
+* Fri Sep 12 2025 Petr Menšík <pemensik@redhat.com> - 32:9.18.29-5
+- logrotate: skip if empty and remove old variants (RHEL-113942)
 
 * Tue Jun 10 2025 Petr Mensik <pemensik@redhat.com> - 32:9.18.29-4
 - Prevent name.c:670 attributes assertion failed (RHEL-30407)
