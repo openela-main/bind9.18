@@ -77,7 +77,7 @@ License:  MPL-2.0 AND ISC AND MIT AND BSD-3-Clause AND BSD-2-Clause
 # ./lib/isc/tm.c BSD-2-clause and/or MPL-2.0
 # ./lib/isccfg/parser.c BSD-2-clause and/or MPL-2.0
 Version:  9.18.29
-Release:  5%{?dist}.2
+Release:  5%{?dist}.4
 Epoch:    32
 Url:      https://www.isc.org/downloads/bind/
 #
@@ -143,6 +143,9 @@ Patch225: bind-9.18-CVE-2025-40780.patch
 Patch226: bind-9.20-CVE-2025-8677-dual-signing.patch
 # https://gitlab.isc.org/isc-projects/bind9/-/merge_requests/11195
 Patch227: bind-9.20-CVE-2025-8677-dual-signing-test.patch
+# https://gitlab.isc.org/isc-projects/bind9/-/commit/5ef459eeaa92222ad28d2186f5eae9a586dece70
+Patch228: bind-9.18-CVE-2026-1519.patch
+Patch229: bind-9.18-CVE-2026-1519-test.patch
 
 %{?systemd_ordering}
 Requires:       coreutils
@@ -991,6 +994,13 @@ fi;
 %endif
 
 %changelog
+* Wed Apr 01 2026 Petr Menšík <pemensik@redhat.com> - 32:9.18.29-5.4
+- Correct backport issue in the patch (CVE-2026-1519)
+
+* Fri Mar 27 2026 Petr Menšík <pemensik@redhat.com> - 32:9.18.29-5.3
+- Prevent Denial of Service via maliciously crafted DNSSEC-validated zone
+  (CVE-2026-1519)
+
 * Fri Oct 31 2025 Petr Menšík <pemensik@redhat.com> - 32:9.18.29-5.2
 - Fix upstream reported regression in recent CVE fix (CVE-2025-8677)
 - Add upstream created test to this regression
