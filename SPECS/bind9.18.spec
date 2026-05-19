@@ -27,14 +27,12 @@
 %endif
 %bcond_with    TSAN
 
-%{?!bind_uid:  %global bind_uid  25}
-%{?!bind_gid:  %global bind_gid  25}
 %{!?_pkgdocdir:%global _pkgdocdir %{_docdir}/%{name}-%{version}}
 %global        bind_dir          /var/named
 %global        chroot_prefix     %{bind_dir}/chroot
 %global        chroot_create_directories /dev /run/named %{_localstatedir}/{log,named,tmp} \\\
                                          %{_sysconfdir}/{crypto-policies/back-ends,pki/dnssec-keys,named} \\\
-                                         %{_libdir}/bind %{_libdir}/named %{_datadir}/GeoIP /proc/sys/net/ipv4
+                                         %{_libdir}/bind %{_libdir}/named %{_datadir}/{GeoIP,named} /proc/sys/net/ipv4
 
 %global        selinuxbooleans   named_write_master_zones=1
 ## The order of libs is important. See lib/Makefile.in for details
@@ -77,7 +75,7 @@ License:  MPL-2.0 AND ISC AND MIT AND BSD-3-Clause AND BSD-2-Clause
 # ./lib/isc/tm.c BSD-2-clause and/or MPL-2.0
 # ./lib/isccfg/parser.c BSD-2-clause and/or MPL-2.0
 Version:  9.18.29
-Release:  5%{?dist}.4
+Release:  14%{?dist}.1
 Epoch:    32
 Url:      https://www.isc.org/downloads/bind/
 #
@@ -107,6 +105,8 @@ Source44: named-chroot-setup.service
 Source46: named-setup-rndc.service
 Source48: setup-named-softhsm.sh
 Source49: named-chroot.files
+Source50: named.sysusers
+Source51: bind-chroot.tmpfiles.d
 
 # Common patches
 # FIXME: Is this still required?
@@ -148,8 +148,9 @@ Patch228: bind-9.18-CVE-2026-1519.patch
 Patch229: bind-9.18-CVE-2026-1519-test.patch
 
 %{?systemd_ordering}
+# https://fedoraproject.org/wiki/Changes/RPMSuportForSystemdSysusers
+%{?sysusers_requires_compat}
 Requires:       coreutils
-Requires(pre):  shadow-utils
 Requires(post): shadow-utils
 Requires(post): glibc-common
 Requires(post): grep
@@ -590,6 +591,9 @@ install -m 644 %{SOURCE38} ${RPM_BUILD_ROOT}%{_unitdir}
 install -m 644 %{SOURCE44} ${RPM_BUILD_ROOT}%{_unitdir}
 install -m 644 %{SOURCE46} ${RPM_BUILD_ROOT}%{_unitdir}
 
+mkdir -p ${RPM_BUILD_ROOT}%{_sysusersdir}
+install -m 644 %{SOURCE50} ${RPM_BUILD_ROOT}%{_sysusersdir}/%{name}.conf
+
 mkdir -p ${RPM_BUILD_ROOT}%{_libexecdir}
 install -m 755 %{SOURCE41} ${RPM_BUILD_ROOT}%{_libexecdir}/setup-named-chroot.sh
 install -m 755 %{SOURCE42} ${RPM_BUILD_ROOT}%{_libexecdir}/generate-rndc-key.sh
@@ -671,21 +675,28 @@ touch ${RPM_BUILD_ROOT}%{_sysconfdir}/rndc.{key,conf}
 install -m 644 %{SOURCE27} ${RPM_BUILD_ROOT}%{_sysconfdir}/named.root.key
 install -m 644 %{SOURCE36} ${RPM_BUILD_ROOT}%{_sysconfdir}/trusted-key.key
 mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/named
+mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/named
+install -p -m 644 %{SOURCE17} ${RPM_BUILD_ROOT}%{_datadir}/named/named.ca
+install -p -m 644 %{SOURCE18} ${RPM_BUILD_ROOT}%{_datadir}/named/named.localhost
+install -p -m 644 %{SOURCE19} ${RPM_BUILD_ROOT}%{_datadir}/named/named.loopback
+install -p -m 644 %{SOURCE20} ${RPM_BUILD_ROOT}%{_datadir}/named/named.empty
 
 # data files:
 mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/named
-install -m 640 %{SOURCE17} ${RPM_BUILD_ROOT}%{_localstatedir}/named/named.ca
-install -m 640 %{SOURCE18} ${RPM_BUILD_ROOT}%{_localstatedir}/named/named.localhost
-install -m 640 %{SOURCE19} ${RPM_BUILD_ROOT}%{_localstatedir}/named/named.loopback
-install -m 640 %{SOURCE20} ${RPM_BUILD_ROOT}%{_localstatedir}/named/named.empty
-install -m 640 %{SOURCE23} ${RPM_BUILD_ROOT}%{_sysconfdir}/named.rfc1912.zones
+# Create duplicate copies for maximal backward compatibility
+install -p -m 644 %{SOURCE17} ${RPM_BUILD_ROOT}%{_localstatedir}/named/named.ca
+install -p -m 644 %{SOURCE18} ${RPM_BUILD_ROOT}%{_localstatedir}/named/named.localhost
+install -p -m 644 %{SOURCE19} ${RPM_BUILD_ROOT}%{_localstatedir}/named/named.loopback
+install -p -m 644 %{SOURCE20} ${RPM_BUILD_ROOT}%{_localstatedir}/named/named.empty
+install -p -m 640 %{SOURCE23} ${RPM_BUILD_ROOT}%{_sysconfdir}/named.rfc1912.zones
 
 # sample bind configuration files for %%doc:
 mkdir -p sample/etc sample/var/named/{data,slaves}
 install -m 644 %{SOURCE25} sample/etc/named.conf
-# Copy default configuration to %%doc to make it usable from system-config-bind
+# Copy default configuration to %%doc
 install -m 644 %{SOURCE16} named.conf.default
 install -m 644 %{SOURCE23} sample/etc/named.rfc1912.zones
+# Extra copies in documentation too.
 install -m 644 %{SOURCE18} %{SOURCE19} %{SOURCE20}  sample/var/named
 install -m 644 %{SOURCE17} sample/var/named/named.ca
 for f in my.internal.zone.db slaves/my.slave.internal.zone.db slaves/my.ddns.internal.zone.db my.external.zone.db; do 
@@ -695,15 +706,15 @@ done
 :;
 
 mkdir -p ${RPM_BUILD_ROOT}%{_tmpfilesdir}
-install -m 644 %{SOURCE35} ${RPM_BUILD_ROOT}%{_tmpfilesdir}/named.conf
+install -p -m 644 %{SOURCE35} ${RPM_BUILD_ROOT}%{_tmpfilesdir}/named.conf
+install -p -m 644 %{SOURCE51} ${RPM_BUILD_ROOT}%{_tmpfilesdir}/%{name}-chroot.conf
 
 mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/rwtab.d
-install -m 644 %{SOURCE43} ${RPM_BUILD_ROOT}%{_sysconfdir}/rwtab.d/named
+install -p -m 644 %{SOURCE43} ${RPM_BUILD_ROOT}%{_sysconfdir}/rwtab.d/named
 
 %pre
 if [ "$1" -eq 1 ]; then
-  /usr/sbin/groupadd -g %{bind_gid} -f -r named >/dev/null 2>&1 || :;
-  /usr/sbin/useradd  -u %{bind_uid} -r -N -M -g named -s /sbin/nologin -d /var/named -c Named named >/dev/null 2>&1 || :;
+  %sysusers_create_compat %{SOURCE50}
 fi;
 :;
 
@@ -808,6 +819,7 @@ fi;
 %{_unitdir}/named-setup-rndc.service
 %{_bindir}/named-journalprint
 %{_bindir}/named-checkconf
+%{_sysusersdir}/%{name}.conf
 %{_bindir}/named-rrchecker
 %{_bindir}/mdig
 %{_sbindir}/named
@@ -843,6 +855,7 @@ fi;
 %dir %{_localstatedir}/named/dynamic
 %ghost %{_localstatedir}/log/named.log
 %defattr(0640,root,named,0750)
+%{_datadir}/named/
 %config %verify(not link) %{_localstatedir}/named/named.ca
 %config %verify(not link) %{_localstatedir}/named/named.localhost
 %config %verify(not link) %{_localstatedir}/named/named.loopback
@@ -930,6 +943,7 @@ fi;
 %{_unitdir}/named-chroot.service
 %{_unitdir}/named-chroot-setup.service
 %{_libexecdir}/setup-named-chroot.sh
+%{_tmpfilesdir}/%{name}-chroot.conf
 %defattr(0664,root,named,-)
 %ghost %dev(c,1,3) %verify(not mtime) %{chroot_prefix}/dev/null
 %ghost %dev(c,1,8) %verify(not mtime) %{chroot_prefix}/dev/random
@@ -952,6 +966,7 @@ fi;
 %dir %{chroot_prefix}/%{_libdir}
 %dir %{chroot_prefix}/%{_libdir}/bind
 %dir %{chroot_prefix}/%{_datadir}/GeoIP
+%dir %{chroot_prefix}/%{_datadir}/named
 %{chroot_prefix}/proc
 %defattr(0660,root,named,01770)
 %dir %{chroot_prefix}%{_localstatedir}/named
@@ -994,18 +1009,36 @@ fi;
 %endif
 
 %changelog
-* Wed Apr 01 2026 Petr Menšík <pemensik@redhat.com> - 32:9.18.29-5.4
+* Wed Apr 01 2026 Petr Menšík <pemensik@redhat.com> - 32:9.18.29-14.1
 - Correct backport issue in the patch (CVE-2026-1519)
 
-* Fri Mar 27 2026 Petr Menšík <pemensik@redhat.com> - 32:9.18.29-5.3
+* Fri Mar 27 2026 Petr Menšík <pemensik@redhat.com> - 32:9.18.29-14
 - Prevent Denial of Service via maliciously crafted DNSSEC-validated zone
   (CVE-2026-1519)
 
-* Fri Oct 31 2025 Petr Menšík <pemensik@redhat.com> - 32:9.18.29-5.2
+* Thu Jan 29 2026 Petr Menšík <pemensik@redhat.com> - 32:9.18.29-13
+- Correct changelog version of previous change
+
+* Wed Jan 28 2026 Petr Menšík <pemensik@redhat.com> - 32:9.18.29-12
+- Add forgotten _libdir/named into bind-chroot tmpfiles (RHEL-132053)
+
+* Fri Dec 12 2025 Petr Menšík <pemensik@redhat.com> - 32:9.18.29-11
+- Add sysusers named user creation (RHEL-132053)
+
+* Fri Dec 12 2025 Petr Menšík <pemensik@redhat.com> - 32:9.18.29-10
+- Add missing bind-chroot subdirectories
+
+* Fri Dec 12 2025 Petr Menšík <pemensik@redhat.com> - 32:9.18.29-9
+- Create /var/named directories for bind-chroot (RHEL-132053)
+
+* Fri Oct 31 2025 Petr Menšík <pemensik@redhat.com> - 32:9.18.29-8
+- Copy named.* files from /usr/share/named into var/named
+
+* Fri Oct 31 2025 Petr Menšík <pemensik@redhat.com> - 32:9.18.29-7
 - Fix upstream reported regression in recent CVE fix (CVE-2025-8677)
 - Add upstream created test to this regression
 
-* Thu Oct 23 2025 Petr Menšík <pemensik@redhat.com> - 32:9.18.29-5.1
+* Thu Oct 23 2025 Petr Menšík <pemensik@redhat.com> - 32:9.18.29-6
 - Refuse malformed DNSKEY records (CVE-2025-8677)
 - Address various spoofing attacks (CVE-2025-40778)
 - Prevent cache poisoning due to weak PRNG (CVE-2025-40780)
