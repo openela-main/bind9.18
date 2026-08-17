@@ -75,7 +75,7 @@ License:  MPL-2.0 AND ISC AND MIT AND BSD-3-Clause AND BSD-2-Clause
 # ./lib/isc/tm.c BSD-2-clause and/or MPL-2.0
 # ./lib/isccfg/parser.c BSD-2-clause and/or MPL-2.0
 Version:  9.18.29
-Release:  14%{?dist}.2
+Release:  14%{?dist}.8
 Epoch:    32
 Url:      https://www.isc.org/downloads/bind/
 #
@@ -150,6 +150,20 @@ Patch229: bind-9.18-CVE-2026-1519-test.patch
 Patch230: bind-9.18-CVE-2026-3039.patch
 # https://gitlab.isc.org/isc-projects/bind9/-/commit/7ce6ce37b1b04af0953ed2d3211587465085600e
 Patch231: bind-9.18-CVE-2026-5946.patch
+# https://github.com/isc-projects/bind9/commit/48f5aa5fb3746d6194edcc57e8792a8b3cc3b454
+Patch232: bind-9.18-CVE-2026-13204.patch
+# https://gitlab.isc.org/isc-projects/bind9/-/commit/dc328a199f96222e0c30cc20b7b795bfc2c9b2e4
+Patch233: bind-9.18-CVE-2026-11331.patch
+# https://github.com/isc-projects/bind9/commit/15089066b15f826d7487c3d160b5872820f84b83
+# https://github.com/isc-projects/bind9/commit/1a4986e2533f87e80eb21da3f06708d335aff1e2
+Patch234: bind-9.18-CVE-2026-11721.patch
+# https://github.com/isc-projects/bind9/commit/231b1ca3edfb26389e1af39181aa6b4413e87ec4
+Patch235: bind-9.18-CVE-2026-11622.patch
+# https://github.com/isc-projects/bind9/commit/058023c66f11d78590d4aa8c4f98946c4c965e21
+# https://github.com/isc-projects/bind9/commit/f751e19a30d107f04c2f644aff9f8dab8fed03ab
+Patch236: bind-9.18-CVE-2026-13321.patch
+# https://github.com/isc-projects/bind9/commit/c9cb6a5e24e43489cf3fd4d4cc2193b6a74499cb
+Patch237: bind-9.18-CVE-2026-10723.patch
 
 %{?systemd_ordering}
 # https://fedoraproject.org/wiki/Changes/RPMSuportForSystemdSysusers
@@ -1013,6 +1027,29 @@ fi;
 %endif
 
 %changelog
+* Sat Jul 25 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 32:9.18.29-14.8
+- Fix NSEC3 signer validation (CVE-2026-10723, RHEL-215704)
+
+* Fri Jul 24 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 32:9.18.29-14.7
+- Reject out-of-zone NSEC next owner names (CVE-2026-13321,
+  RHEL-213314)
+
+* Thu Jul 23 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 32:9.18.29-14.6
+- Fix cache exhaustion via dns_slabheaders (CVE-2026-11622,
+  RHEL-213389)
+
+* Thu Jul 23 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 32:9.18.29-14.5
+- Reject invalid signed wildcard records (CVE-2026-11721,
+  RHEL-213417)
+
+* Thu Jul 23 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 32:9.18.29-14.4
+- Fix RPZ wildcard expansion self-referential CNAME
+  (CVE-2026-11331, RHEL-213495)
+
+* Thu Jul 23 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 32:9.18.29-14.3
+- Fix assertion crash via unsigned NSEC/NSEC3 (CVE-2026-13204,
+  RHEL-213495)
+
 * Mon May 25 2026 Petr Menšík <pemensik@redhat.com> - 32:9.18.29-14.2
 - Fix GSS-API resource leak (CVE-2026-3039)
 - Invalid handling of CLASS != IN (CVE-2026-5946)
