@@ -75,7 +75,7 @@ License:  MPL-2.0 AND ISC AND MIT AND BSD-3-Clause AND BSD-2-Clause
 # ./lib/isc/tm.c BSD-2-clause and/or MPL-2.0
 # ./lib/isccfg/parser.c BSD-2-clause and/or MPL-2.0
 Version:  9.18.29
-Release:  14%{?dist}.8
+Release:  14%{?dist}.9
 Epoch:    32
 Url:      https://www.isc.org/downloads/bind/
 #
@@ -399,6 +399,9 @@ for i in bin/named/Makefile.am; do
 done
 %endif
 
+install -m 644 -p %{SOURCE27} bind.keys
+# Ensure build-in keys are regenerated
+rm -f bind.keys.h
 :;
 
 
@@ -688,10 +691,10 @@ cp -p build/doc/arm/_build/latex/Bv9ARM.pdf ${RPM_BUILD_ROOT}%{_pkgdocdir}
 touch ${RPM_BUILD_ROOT}%{_localstatedir}/log/named.log
 
 # configuration files:
-install -m 640 %{SOURCE16} ${RPM_BUILD_ROOT}%{_sysconfdir}/named.conf
+install -m 640 %{SOURCE16} -p ${RPM_BUILD_ROOT}%{_sysconfdir}/named.conf
 touch ${RPM_BUILD_ROOT}%{_sysconfdir}/rndc.{key,conf}
-install -m 644 %{SOURCE27} ${RPM_BUILD_ROOT}%{_sysconfdir}/named.root.key
-install -m 644 %{SOURCE36} ${RPM_BUILD_ROOT}%{_sysconfdir}/trusted-key.key
+install -m 644 %{SOURCE27} -p ${RPM_BUILD_ROOT}%{_sysconfdir}/named.root.key
+install -m 644 %{SOURCE36} -p ${RPM_BUILD_ROOT}%{_sysconfdir}/trusted-key.key
 mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/named
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/named
 install -p -m 644 %{SOURCE17} ${RPM_BUILD_ROOT}%{_datadir}/named/named.ca
@@ -1027,6 +1030,10 @@ fi;
 %endif
 
 %changelog
+* Wed Sep 02 2026 Petr Menšík <pemensik@redhat.com> - 32:9.18.29-14.9
+- Add new root key 38696 into package files (RHEL-255223)
+- Update built-in anchors in delv and named
+
 * Sat Jul 25 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 32:9.18.29-14.8
 - Fix NSEC3 signer validation (CVE-2026-10723, RHEL-215704)
 
