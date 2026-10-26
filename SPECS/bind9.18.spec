@@ -75,7 +75,7 @@ License:  MPL-2.0 AND ISC AND MIT AND BSD-3-Clause AND BSD-2-Clause
 # ./lib/isc/tm.c BSD-2-clause and/or MPL-2.0
 # ./lib/isccfg/parser.c BSD-2-clause and/or MPL-2.0
 Version:  9.18.29
-Release:  14%{?dist}.10
+Release:  14%{?dist}.11
 Epoch:    32
 Url:      https://www.isc.org/downloads/bind/
 #
@@ -176,6 +176,9 @@ Patch247: bind-9.18-CVE-2026-19667.patch
 Patch248: bind-9.18-CVE-2026-19667-test.patch
 # https://gitlab.isc.org/isc-projects/bind9/commit/17177ec18a4a62b7c67a6d76b3e8efb94886caa6
 Patch249: bind-9.18-CVE-2026-81736.patch
+# https://gitlab.isc.org/isc-projects/bind9/-/commit/794b0dff3cda4d0f4bcb05d07a134def3f75ab90
+Patch250: bind-9.18-CVE-2026-19662.patch
+Patch251: bind-9.18-CVE-2026-19662-test.patch
 
 %{?systemd_ordering}
 # https://fedoraproject.org/wiki/Changes/RPMSuportForSystemdSysusers
@@ -1042,6 +1045,9 @@ fi;
 %endif
 
 %changelog
+* Fri Oct 16 2026 Fedor Vorobev <fvorobev@redhat.com> - 32:9.18.29-14.11
+- Fix CVE-2026-19662: NOQNAME proof use-after-free could crash recursive resolver.
+
 * Thu Sep 17 2026 Petr Menšík <pemensik@redhat.com> - 32:9.18.29-14.10
 - Prevent assertion failure in dns64 mode with break-dnssec yes (CVE-2026-19666)
 - Prevent memory leak on following HTTPS/SVCB RR (CVE-2026-81563)
