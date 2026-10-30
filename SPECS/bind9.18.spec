@@ -75,7 +75,7 @@ License:  MPL-2.0 AND ISC AND MIT AND BSD-3-Clause AND BSD-2-Clause
 # ./lib/isc/tm.c BSD-2-clause and/or MPL-2.0
 # ./lib/isccfg/parser.c BSD-2-clause and/or MPL-2.0
 Version:  9.18.29
-Release:  14%{?dist}.11
+Release:  14%{?dist}.12
 Epoch:    32
 Url:      https://www.isc.org/downloads/bind/
 #
@@ -179,6 +179,18 @@ Patch249: bind-9.18-CVE-2026-81736.patch
 # https://gitlab.isc.org/isc-projects/bind9/-/commit/794b0dff3cda4d0f4bcb05d07a134def3f75ab90
 Patch250: bind-9.18-CVE-2026-19662.patch
 Patch251: bind-9.18-CVE-2026-19662-test.patch
+# https://gitlab.isc.org/isc-projects/bind9/commit/8f32d7b27caf2c0f7ba2b4ae656e124f975025e6
+Patch252: bind-9.18-CVE-2026-94300.patch
+# downstream python testfix
+Patch253: bind-9.18-d-CVE-2026-94300-testfix.patch
+# https://gitlab.isc.org/isc-projects/bind9/commit/7be9e88b8ea5d405ae531fa59a48a24f83331875
+# downstream modification of test case
+Patch254: bind-9.18-CVE-2026-97313.patch
+Patch255: bind-9.18-CVE-2026-97313-test.patch
+# https://gitlab.isc.org/isc-projects/bind9/commit/5b4a28852868a0c1f24bc7e934a314df55478da7
+Patch256: bind-9.18-CVE-2026-96888.patch
+# https://gitlab.isc.org/isc-projects/bind9/commit/a1a3e57ed785cc9268b9269bc51b5b553028032f
+Patch257: bind-9.18-CVE-2026-19630.patch
 
 %{?systemd_ordering}
 # https://fedoraproject.org/wiki/Changes/RPMSuportForSystemdSysusers
@@ -217,7 +229,9 @@ BuildRequires:  softhsm
 %if %{with SYSTEMTEST}
 # bin/tests/system dependencies
 BuildRequires:  perl(Net::DNS) perl(Net::DNS::Nameserver) perl(Time::HiRes) perl(Getopt::Long)
+BuildRequires:  perl(English)
 BuildRequires:  python3-dns
+BuildRequires:  python3-pytest
 # manual configuration requires this tool
 BuildRequires:  iproute
 %endif
@@ -1045,6 +1059,15 @@ fi;
 %endif
 
 %changelog
+* Thu Oct 22 2026 Petr Menšík <pemensik@redhat.com> - 32:9.18.29-14.12
+- Prevent arbitrary code execution via GSS-TSIG UDP message replay
+  (CVE-2026-94300)
+- Fix Denial of service via assertion failure in RPZ query processing (CVE-2026-97313)
+- Prevent Denial of Service via assertion failure during redirect processing
+  (CVE-2026-96888)
+- Prevent Denial of Service via unbounded processing of crafted DNS messages
+  (CVE-2026-19630)
+
 * Fri Oct 16 2026 Fedor Vorobev <fvorobev@redhat.com> - 32:9.18.29-14.11
 - Fix CVE-2026-19662: NOQNAME proof use-after-free could crash recursive resolver.
 
