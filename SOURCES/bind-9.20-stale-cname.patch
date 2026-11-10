@@ -1,0 +1,711 @@
+diff --git a/bin/tests/system/serve-stale/tests.sh b/bin/tests/system/serve-stale/tests.sh
+index c001e7a071..96cd26505f 100755
+--- a/bin/tests/system/serve-stale/tests.sh
++++ b/bin/tests/system/serve-stale/tests.sh
+@@ -2053,7 +2053,7 @@ ret=0
+ echo_i "check stale nodata.example TXT comes from cache (stale-answer-client-timeout 0) ($n)"
+ nextpart ns3/named.run >/dev/null
+ $DIG -p ${PORT} @10.53.0.3 nodata.example TXT >dig.out.test$n || ret=1
+-wait_for_log 5 "nodata.example stale answer used, an attempt to refresh the RRset" ns3/named.run || ret=1
++wait_for_log 5 "nodata.example TXT stale answer used, an attempt to refresh the RRset" ns3/named.run || ret=1
+ grep "status: NOERROR" dig.out.test$n >/dev/null || ret=1
+ grep "EDE: 3 (Stale Answer): (stale data prioritized over lookup)" dig.out.test$n >/dev/null || ret=1
+ grep "ANSWER: 0," dig.out.test$n >/dev/null || ret=1
+@@ -2066,7 +2066,7 @@ ret=0
+ echo_i "check stale data.example TXT comes from cache (stale-answer-client-timeout 0) ($n)"
+ nextpart ns3/named.run >/dev/null
+ $DIG -p ${PORT} @10.53.0.3 data.example TXT >dig.out.test$n || ret=1
+-wait_for_log 5 "data.example stale answer used, an attempt to refresh the RRset" ns3/named.run || ret=1
++wait_for_log 5 "data.example TXT stale answer used, an attempt to refresh the RRset" ns3/named.run || ret=1
+ grep "status: NOERROR" dig.out.test$n >/dev/null || ret=1
+ grep "EDE: 3 (Stale Answer): (stale data prioritized over lookup)" dig.out.test$n >/dev/null || ret=1
+ grep "ANSWER: 1," dig.out.test$n >/dev/null || ret=1
+@@ -2196,7 +2196,7 @@ ret=0
+ echo_i "check stale cname1.stale.test A comes from cache (stale-answer-client-timeout 0) ($n)"
+ nextpart ns3/named.run >/dev/null
+ $DIG -p ${PORT} @10.53.0.3 cname1.stale.test A >dig.out.test$n || ret=1
+-wait_for_log 5 "cname1.stale.test stale answer used, an attempt to refresh the RRset" ns3/named.run || ret=1
++wait_for_log 5 "cname1.stale.test A stale answer used, an attempt to refresh the RRset" ns3/named.run || ret=1
+ grep "status: NOERROR" dig.out.test$n >/dev/null || ret=1
+ grep "EDE: 3 (Stale Answer): (stale data prioritized over lookup)" dig.out.test$n >/dev/null || ret=1
+ grep "ANSWER: 2," dig.out.test$n >/dev/null || ret=1
+@@ -2235,7 +2235,7 @@ ret=0
+ echo_i "check stale cname2.stale.test A comes from cache (stale-answer-client-timeout 0) ($n)"
+ nextpart ns3/named.run >/dev/null
+ $DIG -p ${PORT} @10.53.0.3 cname2.stale.test A >dig.out.test$n || ret=1
+-wait_for_log 5 "cname2.stale.test stale answer used, an attempt to refresh the RRset" ns3/named.run || ret=1
++wait_for_log 5 "cname2.stale.test A stale answer used, an attempt to refresh the RRset" ns3/named.run || ret=1
+ grep "status: NOERROR" dig.out.test$n >/dev/null || ret=1
+ grep "EDE: 3 (Stale Answer): (stale data prioritized over lookup)" dig.out.test$n >/dev/null || ret=1
+ grep "ANSWER: 2," dig.out.test$n >/dev/null || ret=1
+@@ -2312,7 +2312,7 @@ ret=0
+ echo_i "check stale data.example TXT comes from cache (stale-answer-client-timeout 0 stale-refresh-time 4) ($n)"
+ nextpart ns3/named.run >/dev/null
+ $DIG -p ${PORT} @10.53.0.3 data.example TXT >dig.out.test$n || ret=1
+-wait_for_log 5 "data.example stale answer used, an attempt to refresh the RRset" ns3/named.run || ret=1
++wait_for_log 5 "data.example TXT stale answer used, an attempt to refresh the RRset" ns3/named.run || ret=1
+ grep "status: NOERROR" dig.out.test$n >/dev/null || ret=1
+ grep "EDE: 3 (Stale Answer): (stale data prioritized over lookup)" dig.out.test$n >/dev/null || ret=1
+ grep "ANSWER: 1," dig.out.test$n >/dev/null || ret=1
+@@ -2356,7 +2356,7 @@ ret=0
+ echo_i "check stale data.example TXT comes from cache (stale-answer-client-timeout 0 stale-refresh-time 4) ($n)"
+ nextpart ns3/named.run >/dev/null
+ $DIG -p ${PORT} @10.53.0.3 data.example TXT >dig.out.test$n || ret=1
+-wait_for_log 5 "data.example stale answer used, an attempt to refresh the RRset" ns3/named.run || ret=1
++wait_for_log 5 "data.example TXT stale answer used, an attempt to refresh the RRset" ns3/named.run || ret=1
+ grep "status: NOERROR" dig.out.test$n >/dev/null || ret=1
+ grep "EDE: 3 (Stale Answer): (stale data prioritized over lookup)" dig.out.test$n >/dev/null || ret=1
+ grep "ANSWER: 1," dig.out.test$n >/dev/null || ret=1
+@@ -2368,7 +2368,7 @@ status=$((status + ret))
+ n=$((n + 1))
+ ret=0
+ echo_i "wait until resolver query times out, activating stale-refresh-time"
+-wait_for_log 15 "data.example resolver failure, stale answer used" ns3/named.run || ret=1
++wait_for_log 15 "data.example/TXT stale refresh failed: timed out" ns3/named.run || ret=1
+ if [ $ret != 0 ]; then echo_i "failed"; fi
+ status=$((status + ret))
+ 
+@@ -2419,7 +2419,7 @@ n=$((n + 1))
+ ret=0
+ echo_i "check stale data.example TXT comes from cache (stale-answer-client-timeout 0 stale-refresh-time 4) ($n)"
+ $DIG -p ${PORT} @10.53.0.3 data.example TXT >dig.out.test$n || ret=1
+-wait_for_log 5 "data.example stale answer used, an attempt to refresh the RRset" ns3/named.run || ret=1
++wait_for_log 5 "data.example TXT stale answer used, an attempt to refresh the RRset" ns3/named.run || ret=1
+ grep "status: NOERROR" dig.out.test$n >/dev/null || ret=1
+ grep "EDE: 3 (Stale Answer): (stale data prioritized over lookup)" dig.out.test$n >/dev/null || ret=1
+ grep "ANSWER: 1," dig.out.test$n >/dev/null || ret=1
+diff --git a/lib/dns/include/dns/rdataset.h b/lib/dns/include/dns/rdataset.h
+index f63591c5c7..f3f257ad7e 100644
+--- a/lib/dns/include/dns/rdataset.h
++++ b/lib/dns/include/dns/rdataset.h
+@@ -199,7 +199,9 @@ struct dns_rdataset {
+ #define DNS_RDATASETATTR_STALE	      0x01000000
+ #define DNS_RDATASETATTR_ANCIENT      0x02000000
+ #define DNS_RDATASETATTR_STALE_WINDOW 0x04000000
+-#define DNS_RDATASETATTR_STALE_ADDED  0x08000000
++#define DNS_RDATASETATTR_KEEPCASE     0x10000000
++#define DNS_RDATASETATTR_STATICSTUB   0x20000000
++
+ 
+ /*%
+  * _OMITDNSSEC:
+diff --git a/lib/ns/include/ns/client.h b/lib/ns/include/ns/client.h
+index ea2d83e079..db17f01d79 100644
+--- a/lib/ns/include/ns/client.h
++++ b/lib/ns/include/ns/client.h
+@@ -184,6 +184,7 @@ struct ns_client {
+ 					   (query, update, notify) */
+ 	isc_nmhandle_t *fetchhandle;	/* Waiting for recursive fetch */
+ 	isc_nmhandle_t *prefetchhandle; /* Waiting for prefetch / rpzfetch */
++	isc_nmhandle_t *stalerefreshhandle;
+ 	isc_nmhandle_t *updatehandle;	/* Waiting for update callback */
+ 	unsigned char  *tcpbuf;
+ 	size_t		tcpbuf_size;
+diff --git a/lib/ns/include/ns/query.h b/lib/ns/include/ns/query.h
+index 37e55671c2..ce97643297 100644
+--- a/lib/ns/include/ns/query.h
++++ b/lib/ns/include/ns/query.h
+@@ -68,6 +68,7 @@ struct ns_query {
+ 	isc_mutex_t	 fetchlock;
+ 	dns_fetch_t	*fetch;
+ 	dns_fetch_t	*prefetch;
++	dns_fetch_t	*stalerefresh;
+ 	ns_hookasync_t	*hookactx;
+ 	dns_rpz_st_t	*rpz_st;
+ 	isc_bufferlist_t namebufs;
+@@ -119,7 +120,6 @@ struct ns_query {
+ #define NS_QUERYATTR_RRL_CHECKED     0x010000
+ #define NS_QUERYATTR_REDIRECT	     0x020000
+ #define NS_QUERYATTR_ANSWERED	     0x040000
+-#define NS_QUERYATTR_STALEOK	     0x080000
+ #define NS_QUERYATTR_STALEPENDING    0x100000
+ 
+ typedef struct query_ctx query_ctx_t;
+@@ -148,7 +148,6 @@ struct query_ctx {
+ 	bool authoritative;		    /* authoritative query? */
+ 	bool want_restart;		    /* CNAME chain or other
+ 					     * restart needed */
+-	bool		refresh_rrset;	    /* stale RRset refresh needed */
+ 	bool		need_wildcardproof; /* wildcard proof needed */
+ 	bool		nxrewrite;	    /* negative answer from RPZ */
+ 	bool		findcoveringnsec;   /* lookup covering NSEC */
+diff --git a/lib/ns/query.c b/lib/ns/query.c
+index 5549e202df..274c044172 100644
+--- a/lib/ns/query.c
++++ b/lib/ns/query.c
+@@ -139,9 +139,6 @@
+ #define QUERY_STALEPENDING(q) \
+ 	(((q)->attributes & NS_QUERYATTR_STALEPENDING) != 0)
+ 
+-/*% Does the query allow stale data in the response? */
+-#define QUERY_STALEOK(q) (((q)->attributes & NS_QUERYATTR_STALEOK) != 0)
+-
+ /*% Does the query wants to check for stale RRset due to a timeout? */
+ #define QUERY_STALETIMEOUT(q) (((q)->dboptions & DNS_DBFIND_STALETIMEOUT) != 0)
+ 
+@@ -248,6 +245,15 @@ query_addanswer(query_ctx_t *qctx);
+ static isc_result_t
+ query_prepare_delegation_response(query_ctx_t *qctx);
+ 
++static isc_result_t
++qctx_prepare_buffers(query_ctx_t *qctx, isc_buffer_t *buffer);
++
++static void
++qctx_freedata(query_ctx_t *qctx);
++
++static void
++qctx_destroy(query_ctx_t *qctx);
++
+ /*
+  * Return the hooktable in use with 'qctx', or if there isn't one
+  * set, return the default hooktable.
+@@ -503,9 +509,6 @@ query_addwildcardproof(query_ctx_t *qctx, bool ispositive, bool nodata);
+ static void
+ query_addauth(query_ctx_t *qctx);
+ 
+-static void
+-query_clear_stale(ns_client_t *client);
+-
+ /*
+  * Increment query statistics counters.
+  */
+@@ -811,6 +814,7 @@ ns_query_init(ns_client_t *client) {
+ 
+ 	client->query.fetch = NULL;
+ 	client->query.prefetch = NULL;
++	client->query.stalerefresh = NULL;
+ 	client->query.authdb = NULL;
+ 	client->query.authzone = NULL;
+ 	client->query.authdbset = false;
+@@ -2241,10 +2245,6 @@ query_addrrset(query_ctx_t *qctx, dns_name_t **namep,
+ 		if ((rdataset->attributes & DNS_RDATASETATTR_REQUIRED) != 0) {
+ 			mrdataset->attributes |= DNS_RDATASETATTR_REQUIRED;
+ 		}
+-		if ((rdataset->attributes & DNS_RDATASETATTR_STALE_ADDED) != 0)
+-		{
+-			mrdataset->attributes |= DNS_RDATASETATTR_STALE_ADDED;
+-		}
+ 		return;
+ 	} else if (result == DNS_R_NXDOMAIN) {
+ 		/*
+@@ -2530,6 +2530,88 @@ free_devent(ns_client_t *client, isc_event_t **eventp,
+ 	isc_event_free(eventp);
+ }
+ 
++static void
++stale_refresh_aftermath(ns_client_t *client, isc_result_t result) {
++	dns_db_t *db = NULL;
++	unsigned int dboptions;
++	isc_buffer_t buffer;
++	query_ctx_t qctx;
++	dns_clientinfomethods_t cm;
++	dns_clientinfo_t ci;
++	char namebuf[DNS_NAME_FORMATSIZE];
++	char typebuf[DNS_RDATATYPE_FORMATSIZE];
++
++	/*
++	 * If refreshing a stale RRset failed, we need to set the
++	 * stale-refresh-time window, so that on future requests for this
++	 * RRset the stale entry may be used immediately.
++	 */
++	switch (result) {
++	case ISC_R_SUCCESS:
++	case DNS_R_GLUE:
++	case DNS_R_ZONECUT:
++	case ISC_R_NOTFOUND:
++	case DNS_R_DELEGATION:
++	case DNS_R_EMPTYNAME:
++	case DNS_R_NXRRSET:
++	case DNS_R_EMPTYWILD:
++	case DNS_R_NXDOMAIN:
++	case DNS_R_COVERINGNSEC:
++	case DNS_R_NCACHENXDOMAIN:
++	case DNS_R_NCACHENXRRSET:
++	case DNS_R_CNAME:
++	case DNS_R_DNAME:
++		break;
++	default:
++		dns_name_format(client->query.qname, namebuf, sizeof(namebuf));
++		dns_rdatatype_format(client->query.qtype, typebuf,
++				     sizeof(typebuf));
++		ns_client_log(client, NS_LOGCATEGORY_SERVE_STALE,
++			      NS_LOGMODULE_QUERY, ISC_LOG_NOTICE,
++			      "%s/%s stale refresh failed: timed out", namebuf,
++			      typebuf);
++
++		/*
++		 * Set up a short lived query context, solely to set the
++		 * last refresh failure time on the RRset in the cache
++		 * database, starting the stale-refresh-time window for it.
++		 * This is a condensed form of query_lookup().
++		 */
++		isc_stdtime_get(&client->now);
++		client->query.attributes &= ~NS_QUERYATTR_RECURSIONOK;
++		qctx_init(client, NULL, 0, &qctx);
++
++		dns_clientinfomethods_init(&cm, ns_client_sourceip);
++		dns_clientinfo_init(&ci, qctx.client, NULL);
++		if (HAVEECS(qctx.client)) {
++			dns_clientinfo_setecs(&ci, &qctx.client->ecs);
++		}
++
++		result = qctx_prepare_buffers(&qctx, &buffer);
++		if (result != ISC_R_SUCCESS) {
++			goto cleanup;
++		}
++
++		dboptions = qctx.client->query.dboptions;
++		dboptions |= DNS_DBFIND_STALEOK;
++		dboptions |= DNS_DBFIND_STALESTART;
++
++		dns_db_attach(qctx.client->view->cachedb, &db);
++		(void)dns_db_findext(db, qctx.client->query.qname, NULL,
++				     qctx.client->query.qtype, dboptions,
++				     qctx.client->now, &qctx.node, qctx.fname,
++				     &cm, &ci, qctx.rdataset, qctx.sigrdataset);
++		if (qctx.node != NULL) {
++			dns_db_detachnode(db, &qctx.node);
++		}
++		dns_db_detach(&db);
++
++	cleanup:
++		qctx_freedata(&qctx);
++		qctx_destroy(&qctx);
++	}
++}
++
+ static void
+ prefetch_done(isc_task_t *task, isc_event_t *event) {
+ 	dns_fetchevent_t *devent = (dns_fetchevent_t *)event;
+@@ -2564,6 +2646,133 @@ prefetch_done(isc_task_t *task, isc_event_t *event) {
+ 	isc_nmhandle_detach(&client->prefetchhandle);
+ }
+ 
++static void
++refresh_done(isc_task_t *task, isc_event_t *event) {
++	dns_fetchevent_t *devent = (dns_fetchevent_t *)event;
++	ns_client_t *client;
++
++	UNUSED(task);
++
++	REQUIRE(event->ev_type == DNS_EVENT_FETCHDONE);
++	client = devent->ev_arg;
++	REQUIRE(NS_CLIENT_VALID(client));
++	REQUIRE(task == client->task);
++
++	CTRACE(ISC_LOG_DEBUG(3), "refresh_done");
++
++	LOCK(&client->query.fetchlock);
++	if (client->query.stalerefresh != NULL) {
++		INSIST(devent->fetch == client->query.stalerefresh);
++		client->query.stalerefresh = NULL;
++	}
++	UNLOCK(&client->query.fetchlock);
++
++	stale_refresh_aftermath(client, devent->result);
++
++	if (client->recursionquota != NULL) {
++		isc_quota_detach(&client->recursionquota);
++		ns_stats_decrement(client->sctx->nsstats,
++				   ns_statscounter_recursclients);
++	}
++
++	free_devent(client, &event, &devent);
++	isc_nmhandle_detach(&client->stalerefreshhandle);
++}
++
++static void
++query_stale_refresh(ns_client_t *client, dns_name_t *qname,
++					dns_rdataset_t *rdataset) {
++	isc_result_t result;
++	isc_sockaddr_t *peeraddr;
++	dns_rdataset_t *tmprdataset;
++	unsigned int options;
++
++	CTRACE(ISC_LOG_DEBUG(3), "query_stale_refresh");
++
++	bool stale_refresh_window = false;
++	bool stale_rrset = true;
++
++	if (rdataset != NULL) {
++		stale_refresh_window =
++			(STALE_WINDOW(rdataset) &&
++			(client->query.dboptions & DNS_DBFIND_STALEENABLED) != 0);
++		stale_rrset = STALE(rdataset);
++	}
++
++	if (client->query.stalerefresh != NULL ||
++		(client->query.dboptions & DNS_DBFIND_STALETIMEOUT) == 0 ||
++		!stale_rrset || stale_refresh_window)
++	{
++		return;
++	}
++
++	char namebuf[DNS_NAME_FORMATSIZE];
++	char typebuf[DNS_RDATATYPE_FORMATSIZE];
++	dns_name_format(qname, namebuf, sizeof(namebuf));
++	dns_rdatatype_format(client->query.qtype, typebuf, sizeof(typebuf));
++	isc_log_write(ns_lctx, NS_LOGCATEGORY_SERVE_STALE, NS_LOGMODULE_QUERY,
++			ISC_LOG_INFO,
++			"%s %s stale answer used, an attempt "
++			"to refresh the RRset will still be "
++			"made",
++			namebuf, typebuf);
++
++	client->query.dboptions &= ~(DNS_DBFIND_STALETIMEOUT |
++				     DNS_DBFIND_STALEOK |
++				     DNS_DBFIND_STALEENABLED);
++
++	if (client->recursionquota == NULL) {
++		result = isc_quota_attach(&client->sctx->recursionquota,
++					  &client->recursionquota);
++		switch (result) {
++			case ISC_R_SUCCESS:
++				ns_stats_increment(client->sctx->nsstats,
++						   ns_statscounter_recursclients);
++				break;
++			case ISC_R_SOFTQUOTA:
++				isc_quota_detach(&client->recursionquota);
++				FALLTHROUGH;
++			default:
++				return;
++		}
++	}
++
++	tmprdataset = ns_client_newrdataset(client);
++	if (tmprdataset == NULL) {
++		return;
++	}
++
++	if (!TCP(client)) {
++		peeraddr = &client->peeraddr;
++	} else {
++		peeraddr = NULL;
++	}
++
++	isc_nmhandle_attach(client->handle, &client->stalerefreshhandle);
++	options = client->query.fetchoptions;
++	result = dns_resolver_createfetch(
++		client->view->resolver, qname, client->query.qtype, NULL, NULL, NULL,
++		peeraddr, client->message->id, options, 0, NULL, client->task,
++		refresh_done, client, tmprdataset, NULL,
++		&client->query.stalerefresh);
++	if (result != ISC_R_SUCCESS) {
++		ns_client_putrdataset(client, &tmprdataset);
++		isc_nmhandle_detach(&client->stalerefreshhandle);
++	}
++}
++
++static void
++query_stale_refresh_ncache(ns_client_t *client) {
++	dns_name_t *qname;
++
++	if (client->query.origqname != NULL) {
++		qname = client->query.origqname;
++	} else {
++		qname = client->query.qname;
++	}
++	query_stale_refresh(client, qname, NULL);
++}
++
+ static void
+ query_prefetch(ns_client_t *client, dns_name_t *qname,
+ 	       dns_rdataset_t *rdataset) {
+@@ -2579,6 +2788,7 @@ query_prefetch(ns_client_t *client, dns_name_t *qname,
+ 	    rdataset->ttl > client->view->prefetch_trigger ||
+ 	    (rdataset->attributes & DNS_RDATASETATTR_PREFETCH) == 0)
+ 	{
++		query_stale_refresh(client, qname, rdataset);
+ 		return;
+ 	}
+ 
+@@ -2623,6 +2833,7 @@ query_prefetch(ns_client_t *client, dns_name_t *qname,
+ 
+ 	dns_rdataset_clearprefetch(rdataset);
+ 	ns_stats_increment(client->sctx->nsstats, ns_statscounter_prefetch);
++	return;
+ }
+ 
+ static void
+@@ -5801,55 +6012,6 @@ error:
+ 	return (ISC_R_NOMEMORY);
+ }
+ 
+-/*
+- * Setup a new query context for resolving a query.
+- *
+- * This function is only called if both these conditions are met:
+- *    1. BIND is configured with stale-answer-client-timeout 0.
+- *    2. A stale RRset is found in cache during initial query
+- *       database lookup.
+- *
+- * We continue with this function for refreshing/resolving an RRset
+- * after answering a client with stale data.
+- */
+-static void
+-query_refresh_rrset(query_ctx_t *orig_qctx) {
+-	isc_buffer_t buffer;
+-	query_ctx_t qctx;
+-
+-	REQUIRE(orig_qctx != NULL);
+-	REQUIRE(orig_qctx->client != NULL);
+-
+-	qctx_copy(orig_qctx, &qctx);
+-	qctx.client->query.dboptions &= ~(DNS_DBFIND_STALETIMEOUT |
+-					  DNS_DBFIND_STALEOK |
+-					  DNS_DBFIND_STALEENABLED);
+-	qctx.client->nodetach = false;
+-
+-	/*
+-	 * We'll need some resources...
+-	 */
+-	if (qctx_prepare_buffers(&qctx, &buffer) != ISC_R_SUCCESS) {
+-		dns_db_detach(&qctx.db);
+-		qctx_destroy(&qctx);
+-		return;
+-	}
+-
+-	/*
+-	 * Pretend we didn't find anything in cache.
+-	 */
+-	(void)query_gotanswer(&qctx, ISC_R_NOTFOUND);
+-
+-	if (qctx.fname != NULL) {
+-		ns_client_releasename(qctx.client, &qctx.fname);
+-	}
+-	if (qctx.rdataset != NULL) {
+-		ns_client_putrdataset(qctx.client, &qctx.rdataset);
+-	}
+-
+-	qctx_destroy(&qctx);
+-}
+-
+ /*%
+  * Depending on the db lookup result, we can respond to the
+  * client this stale answer.
+@@ -5921,7 +6083,7 @@ query_lookup(query_ctx_t *qctx) {
+ 		rpzqname = qctx->client->query.qname;
+ 	}
+ 
+-	if ((qctx->options & DNS_GETDB_STALEFIRST) != 0) {
++	if ((qctx->options & DNS_GETDB_STALEFIRST) != 0 && !qctx->is_zone) {
+ 		/*
+ 		 * If DNS_GETDB_STALEFIRST is set, it means that a stale
+ 		 * RRset may be returned as part of this lookup. An attempt
+@@ -5931,19 +6093,19 @@ query_lookup(query_ctx_t *qctx) {
+ 		qctx->client->query.dboptions |= DNS_DBFIND_STALETIMEOUT;
+ 	}
+ 
+-	dboptions = qctx->client->query.dboptions;
+-	if (!qctx->is_zone && qctx->findcoveringnsec &&
+-	    (qctx->type != dns_rdatatype_null || !dns_name_istat(rpzqname)))
+-	{
+-		dboptions |= DNS_DBFIND_COVERINGNSEC;
+-	}
+-
+ 	(void)dns_db_getservestalerefresh(qctx->client->view->cachedb,
+ 					  &stale_refresh);
+ 	if (stale_refresh > 0 &&
+ 	    dns_view_staleanswerenabled(qctx->client->view))
+ 	{
+-		dboptions |= DNS_DBFIND_STALEENABLED;
++		qctx->client->query.dboptions |= DNS_DBFIND_STALEENABLED;
++	}
++
++	dboptions = qctx->client->query.dboptions;
++	if (!qctx->is_zone && qctx->findcoveringnsec &&
++		(qctx->type != dns_rdatatype_null || !dns_name_istat(rpzqname)))
++	{
++		dboptions |= DNS_DBFIND_COVERINGNSEC;
+ 	}
+ 
+ 	result = dns_db_findext(qctx->db, rpzqname, qctx->version, qctx->type,
+@@ -6092,19 +6254,7 @@ query_lookup(query_ctx_t *qctx) {
+ 				 * Immediately return the stale answer, start a
+ 				 * resolver fetch to refresh the data in cache.
+ 				 */
+-				isc_log_write(
+-					ns_lctx, NS_LOGCATEGORY_SERVE_STALE,
+-					NS_LOGMODULE_QUERY, ISC_LOG_INFO,
+-					"%s stale answer used, an attempt to "
+-					"refresh the RRset will still be made",
+-					namebuf);
+-
+-				qctx->refresh_rrset = STALE(qctx->rdataset);
+-				/*
+-				 * If we are refreshing the RRSet, we must not
+-				 * detach from the client in query_send().
+-				 */
+-				qctx->client->nodetach = qctx->refresh_rrset;
++				qctx->client->nodetach = false;
+ 
+ 				if (stale_found) {
+ 					ns_client_extendederror(
+@@ -6144,76 +6294,12 @@ query_lookup(query_ctx_t *qctx) {
+ 		}
+ 	}
+ 
+-	if (stale_timeout && (answer_found || stale_found)) {
+-		/*
+-		 * Mark RRsets that we are adding to the client message on a
+-		 * lookup during 'stale-answer-client-timeout', so we can
+-		 * clean it up if needed when we resume from recursion.
+-		 */
+-		qctx->client->query.attributes |= NS_QUERYATTR_STALEOK;
+-		qctx->rdataset->attributes |= DNS_RDATASETATTR_STALE_ADDED;
+-	}
+-
+ 	result = query_gotanswer(qctx, result);
+ 
+ cleanup:
+ 	return (result);
+ }
+ 
+-/*
+- * Clear all rdatasets from the message that are in the given section and
+- * that have the 'attr' attribute set.
+- */
+-static void
+-message_clearrdataset(dns_message_t *msg, unsigned int attr) {
+-	unsigned int i;
+-	dns_name_t *name, *next_name;
+-	dns_rdataset_t *rds, *next_rds;
+-
+-	/*
+-	 * Clean up name lists by calling the rdataset disassociate function.
+-	 */
+-	for (i = DNS_SECTION_ANSWER; i < DNS_SECTION_MAX; i++) {
+-		name = ISC_LIST_HEAD(msg->sections[i]);
+-		while (name != NULL) {
+-			next_name = ISC_LIST_NEXT(name, link);
+-
+-			rds = ISC_LIST_HEAD(name->list);
+-			while (rds != NULL) {
+-				next_rds = ISC_LIST_NEXT(rds, link);
+-				if ((rds->attributes & attr) != attr) {
+-					rds = next_rds;
+-					continue;
+-				}
+-				ISC_LIST_UNLINK(name->list, rds, link);
+-				INSIST(dns_rdataset_isassociated(rds));
+-				dns_rdataset_disassociate(rds);
+-				isc_mempool_put(msg->rdspool, rds);
+-				rds = next_rds;
+-			}
+-
+-			if (ISC_LIST_EMPTY(name->list)) {
+-				ISC_LIST_UNLINK(msg->sections[i], name, link);
+-				if (dns_name_dynamic(name)) {
+-					dns_name_free(name, msg->mctx);
+-				}
+-				isc_mempool_put(msg->namepool, name);
+-			}
+-
+-			name = next_name;
+-		}
+-	}
+-}
+-
+-/*
+- * Clear any rdatasets from the client's message that were added on a lookup
+- * due to a client timeout.
+- */
+-static void
+-query_clear_stale(ns_client_t *client) {
+-	message_clearrdataset(client->message, DNS_RDATASETATTR_STALE_ADDED);
+-}
+-
+ /*
+  * Create a new query context with the sole intent of looking up for a stale
+  * RRset in cache. If an entry is found, we mark the original query as
+@@ -6293,6 +6379,7 @@ fetch_callback(isc_task_t *task, isc_event_t *event) {
+ 	}
+ 	client->query.fetchoptions &= ~DNS_FETCHOPT_TRYSTALE_ONTIMEOUT;
+ 	client->query.dboptions &= ~DNS_DBFIND_STALETIMEOUT;
++	client->query.dboptions &= ~DNS_DBFIND_STALEENABLED;
+ 	client->nodetach = false;
+ 
+ 	LOCK(&client->query.fetchlock);
+@@ -7660,14 +7747,6 @@ query_usestale(query_ctx_t *qctx, isc_result_t result) {
+ 		return (false);
+ 	}
+ 
+-	if (qctx->refresh_rrset) {
+-		/*
+-		 * This is a refreshing query, we have already prioritized
+-		 * stale data, so don't enable serve-stale again.
+-		 */
+-		return (false);
+-	}
+-
+ 	if (result == DNS_R_DUPLICATE || result == DNS_R_DROP ||
+ 	    result == ISC_R_ALREADYRUNNING)
+ 	{
+@@ -8207,24 +8286,6 @@ query_addanswer(query_ctx_t *qctx) {
+ 
+ 	CALL_HOOK(NS_QUERY_ADDANSWER_BEGIN, qctx);
+ 
+-	/*
+-	 * On normal lookups, clear any rdatasets that were added on a
+-	 * lookup due to stale-answer-client-timeout. Do not clear if we
+-	 * are going to refresh the RRset, because the stale contents are
+-	 * prioritized.
+-	 */
+-	if (QUERY_STALEOK(&qctx->client->query) &&
+-	    !QUERY_STALETIMEOUT(&qctx->client->query) && !qctx->refresh_rrset)
+-	{
+-		CCTRACE(ISC_LOG_DEBUG(3), "query_clear_stale");
+-		query_clear_stale(qctx->client);
+-		/*
+-		 * We can clear the attribute to prevent redundant clearing
+-		 * in subsequent lookups.
+-		 */
+-		qctx->client->query.attributes &= ~NS_QUERYATTR_STALEOK;
+-	}
+-
+ 	if (qctx->dns64) {
+ 		result = query_dns64(qctx);
+ 		qctx->noqname = NULL;
+@@ -8258,9 +8319,7 @@ query_addanswer(query_ctx_t *qctx) {
+ 		query_filter64(qctx);
+ 		ns_client_putrdataset(qctx->client, &qctx->rdataset);
+ 	} else {
+-		if (!qctx->is_zone && RECURSIONOK(qctx->client) &&
+-		    !QUERY_STALETIMEOUT(&qctx->client->query))
+-		{
++		if (!qctx->is_zone && RECURSIONOK(qctx->client)) {
+ 			query_prefetch(qctx->client, qctx->fname,
+ 				       qctx->rdataset);
+ 		}
+@@ -10542,6 +10601,10 @@ query_ncache(query_ctx_t *qctx, isc_result_t result) {
+ 		}
+ 	}
+ 
++	if (!qctx->is_zone && RECURSIONOK(qctx->client)) {
++		query_stale_refresh_ncache(qctx->client);
++	}
++
+ 	return (query_nodata(qctx, result));
+ 
+ cleanup:
+@@ -12044,20 +12107,6 @@ ns_query_done(query_ctx_t *qctx) {
+ 	nodetach = qctx->client->nodetach;
+ 	query_send(qctx->client);
+ 
+-	if (qctx->refresh_rrset) {
+-		/*
+-		 * If we reached this point then it means that we have found a
+-		 * stale RRset entry in cache and BIND is configured to allow
+-		 * queries to be answered with stale data if no active RRset
+-		 * is available, i.e. "stale-anwer-client-timeout 0". But, we
+-		 * still need to refresh the RRset. To prevent adding duplicate
+-		 * RRsets, clear the RRsets from the message before doing the
+-		 * refresh.
+-		 */
+-		message_clearrdataset(qctx->client->message, 0);
+-		query_refresh_rrset(qctx);
+-	}
+-
+ 	if (!nodetach) {
+ 		qctx->detach_client = true;
+ 	}

@@ -1,0 +1,144 @@
+diff --git a/bin/tests/system/nsec3/ns3/named.conf.in b/bin/tests/system/nsec3/ns3/named.conf.in
+index 022e9421bc..2bee4f898a 100644
+--- a/bin/tests/system/nsec3/ns3/named.conf.in
++++ b/bin/tests/system/nsec3/ns3/named.conf.in
+@@ -68,7 +68,7 @@ zone "nsec-to-nsec3.kasp" {
+ 
+ /*
+  * This zone starts with NSEC, but will be reconfigured to use NSEC3.
+- * This should work despite the incompatible RSAHSHA1 algorithm,
++ * This should work despite the incompatible RSASHA1 algorithm,
+  * because the DS is still in hidden state.
+  */
+ zone "rsasha1-to-nsec3.kasp" {
+@@ -92,7 +92,7 @@ zone "rsasha1-to-nsec3-wait.kasp" {
+ 
+ /*
+  * This zone starts with NSEC3, but will be reconfigured to use NSEC with an
+- * NSEC only algorithm. This should work despite the incompatible RSAHSHA1
++ * NSEC only algorithm. This should work despite the incompatible RSASHA1
+  * algorithm, because the DS is still in hidden state.
+  */
+ zone "nsec3-to-rsasha1.kasp" {
+diff --git a/bin/tests/system/nsec3/ns3/setup.sh b/bin/tests/system/nsec3/ns3/setup.sh
+index 5ddcfc01b0..3cd7210192 100644
+--- a/bin/tests/system/nsec3/ns3/setup.sh
++++ b/bin/tests/system/nsec3/ns3/setup.sh
+@@ -35,24 +35,23 @@ if (
+   cd ..
+   $SHELL ../testcrypto.sh -q RSASHA1
+ ); then
+-  for zn in rsasha1-to-nsec3 rsasha1-to-nsec3-wait nsec3-to-rsasha1 \
+-    nsec3-to-rsasha1-ds; do
+-    setup "${zn}.kasp"
+-  done
+-
+   longago="now-1y"
+-  keytimes="-P ${longago} -A ${longago}"
++  keytimes="-P ${longago} -A ${longago} -P sync ${longago}"
+   O="omnipresent"
+ 
+-  zone="rsasha1-to-nsec3-wait.kasp"
+-  CSK=$($KEYGEN -k "rsasha1" -l named.conf $keytimes $zone 2>keygen.out.$zone)
+-  echo_i "Created key file $CSK"
+-  $SETTIME -s -g $O -k $O $longago -r $O $longago -z $O $longago -d $O $longago "$CSK" >settime.out.$zone 2>&1
++  for zn in nsec3-to-rsasha1 nsec3-to-rsasha1-ds; do
++    setup "${zn}.kasp"
++    CSK=$($KEYGEN -k "default" -l named.conf $keytimes $zone 2>keygen.out.$zone)
++    $SETTIME -s -g $O -k $O $longago -r $O $longago -z $O $longago -d $O $longago "$CSK" >settime.out.$zone 2>&1
++    cat $CSK.key >>$zonefile
++  done
+ 
+-  zone="nsec3-to-rsasha1-ds.kasp"
+-  CSK=$($KEYGEN -k "default" -l named.conf $keytimes $zone 2>keygen.out.$zone)
+-  echo_i "Created key file $CSK"
+-  $SETTIME -s -g $O -k $O $longago -r $O $longago -z $O $longago -d $O $longago "$CSK" >settime.out.$zone 2>&1
++  for zn in rsasha1-to-nsec3 rsasha1-to-nsec3-wait; do
++    setup "${zn}.kasp"
++    CSK=$($KEYGEN -k "rsasha1" -l named.conf $keytimes $zone 2>keygen.out.$zone)
++    $SETTIME -s -g $O -k $O $longago -r $O $longago -z $O $longago -d $O $longago "$CSK" >settime.out.$zone 2>&1
++    cat $CSK.key >>$zonefile
++  done
+ else
+   echo_i "skip: skip rsasha1 zones - signing with RSASHA1 not supported"
+ fi
+diff --git a/bin/tests/system/nsec3/tests.sh b/bin/tests/system/nsec3/tests.sh
+index 6cb28583c6..b8e9152cf9 100644
+--- a/bin/tests/system/nsec3/tests.sh
++++ b/bin/tests/system/nsec3/tests.sh
+@@ -80,10 +80,10 @@ set_key_rsasha1_values() {
+   set_zonesigning $1 "yes"
+ 
+   set_keystate $1 "GOAL" "omnipresent"
+-  set_keystate $1 "STATE_DNSKEY" "rumoured"
+-  set_keystate $1 "STATE_KRRSIG" "rumoured"
+-  set_keystate $1 "STATE_ZRRSIG" "rumoured"
+-  set_keystate $1 "STATE_DS" "hidden"
++  set_keystate $1 "STATE_DNSKEY" "omnipresent"
++  set_keystate $1 "STATE_KRRSIG" "omnipresent"
++  set_keystate $1 "STATE_ZRRSIG" "omnipresent"
++  set_keystate $1 "STATE_DS" "omnipresent"
+ }
+ 
+ # Update the key states.
+@@ -251,21 +251,21 @@ if ($SHELL ../testcrypto.sh -q RSASHA1); then
+   set_zone_policy "rsasha1-to-nsec3-wait.kasp" "rsasha1" 1 3600
+   set_server "ns3" "10.53.0.3"
+   set_key_rsasha1_values "KEY1"
+-  set_key_states "KEY1" "omnipresent" "omnipresent" "omnipresent" "omnipresent" "omnipresent"
+   echo_i "initial check zone ${ZONE}"
+   check_nsec
+ 
+   # Zone: nsec3-to-rsasha1.kasp.
+   set_zone_policy "nsec3-to-rsasha1.kasp" "nsec3" 1 3600
+   set_server "ns3" "10.53.0.3"
+-  set_key_rsasha1_values "KEY1"
++  set_key_default_values "KEY1"
++  set_key_states "KEY1" "omnipresent" "omnipresent" "omnipresent" "omnipresent" "omnipresent"
+   echo_i "initial check zone ${ZONE}"
+   check_nsec3
+ 
+   # Zone: nsec3-to-rsasha1-ds.kasp.
+   set_zone_policy "nsec3-to-rsasha1-ds.kasp" "nsec3" 1 3600
+   set_server "ns3" "10.53.0.3"
+-  set_key_rsasha1_values "KEY1"
++  set_key_default_values "KEY1"
+   set_key_states "KEY1" "omnipresent" "omnipresent" "omnipresent" "omnipresent" "omnipresent"
+   echo_i "initial check zone ${ZONE}"
+   check_nsec3
+@@ -385,12 +385,10 @@ if ($SHELL ../testcrypto.sh -q RSASHA1); then
+   set_zone_policy "rsasha1-to-nsec3.kasp" "nsec3" 2 3600
+   set_server "ns3" "10.53.0.3"
+   set_key_rsasha1_values "KEY1"
+-  set_key_states "KEY1" "hidden" "unretentive" "unretentive" "unretentive" "hidden"
+-  set_keysigning "KEY1" "no"
+-  set_zonesigning "KEY1" "no"
++  set_key_states "KEY1" "hidden" "omnipresent" "omnipresent" "omnipresent" "omnipresent"
+   set_key_default_values "KEY2"
+   echo_i "check zone ${ZONE} after reconfig"
+-  check_nsec3
++  check_nsec
+ 
+   # Zone: rsasha1-to-nsec3-wait.kasp.
+   set_zone_policy "rsasha1-to-nsec3-wait.kasp" "nsec3" 2 3600
+@@ -406,10 +404,9 @@ if ($SHELL ../testcrypto.sh -q RSASHA1); then
+   set_nsec3param "1" "0" "0"
+   set_server "ns3" "10.53.0.3"
+   set_key_default_values "KEY1"
+-  set_key_states "KEY1" "hidden" "unretentive" "unretentive" "unretentive" "hidden"
+-  set_keysigning "KEY1" "no"
+-  set_zonesigning "KEY1" "no"
++  set_key_states "KEY1" "hidden" "omnipresent" "omnipresent" "omnipresent" "omnipresent"
+   set_key_rsasha1_values "KEY2"
++  set_key_states "KEY2" "omnipresent" "rumoured" "rumoured" "rumoured" "hidden"
+   echo_i "check zone ${ZONE} after reconfig"
+   check_nsec
+ 
+@@ -420,6 +417,7 @@ if ($SHELL ../testcrypto.sh -q RSASHA1); then
+   set_key_default_values "KEY1"
+   set_key_states "KEY1" "hidden" "omnipresent" "omnipresent" "omnipresent" "omnipresent"
+   set_key_rsasha1_values "KEY2"
++  set_key_states "KEY2" "omnipresent" "rumoured" "rumoured" "rumoured" "hidden"
+   echo_i "check zone ${ZONE} after reconfig"
+   check_nsec
+ 
